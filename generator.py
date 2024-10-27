@@ -50,7 +50,7 @@ def main():
         writer.writeheader()
         writer.writerows(sheet2_data)
 
-    print("Sales data generation complete.")
+    print("Sales data generated.")
 
 if __name__ == "__main__":
     main()
