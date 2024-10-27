@@ -4,14 +4,16 @@ import random
 from faker import Faker
 from datetime import datetime, timedelta, date
 from randomtimestamp import randomtimestamp
+import faker_commerce
 
-fake = Faker()
+fake = Faker("pl_PL")
+fake.add_provider(faker_commerce.Provider)
 
 # number of records
 num_employees = 50
-num_products = 10000
-num_returns = 100000
-num_complaints = 10000
+num_products = 100
+num_returns = 100
+num_complaints = 100
 
 def random_date(start_year, end_year):
     return fake.date_between(start_date=date(start_year, 1, 1), end_date=date(end_year, 12, 31))
@@ -32,7 +34,7 @@ def generate_first_period():
     for _ in range(num_products):
         products.append({
             'id': str(uuid.uuid4()),
-            'name': fake.word().capitalize(),
+            'name': fake.ecommerce_name().capitalize(),
             'issue_year': fake.year(),
             'main_building_material': fake.random_element(['Metal', 'Plastic PBT', 'Plastic POM', 'Plastic ABS', 'Wood', 'Glass Fiber', 'Steel', 'Aluminum', 'Glass', 'Fiber'])
         })
@@ -88,7 +90,7 @@ def generate_second_period():
     pass
 
 def save_to_csv(data, filename, fieldnames):
-    with open(filename, mode='w', newline='') as file:
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(data)
