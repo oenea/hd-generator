@@ -6,19 +6,22 @@ from datetime import datetime, timedelta, date
 from randomtimestamp import randomtimestamp
 import faker_commerce
 
+output = 'output'
+
 fake = Faker("pl_PL")
 fake.add_provider(faker_commerce.Provider)
 
 # number of records
-num_employees = 50
-num_products = 100
-num_returns = 100
-num_complaints = 100
+num_employees = 500
+num_products = 10000
+num_returns = 100000
+num_complaints = 10000
 
-num_products_b = 10
-num_returns_b = 10
-num_complaints_b = 10
+num_products_b = 1000
+num_returns_b = 1000
+num_complaints_b = 1000
 employees = []
+products = []
 
 def random_date(start_year, end_year):
     return fake.date_between(start_date=date(start_year, 1, 1), end_date=date(end_year, 12, 31))
@@ -35,12 +38,11 @@ def generate_first_period():
         })
 
     # generate Products
-    products = []
     for _ in range(num_products):
         products.append({
             'id': str(uuid.uuid4()),
             'name': fake.ecommerce_name().capitalize(),
-            'issue_year': fake.year(),
+            'issue_year': random.randint(2000, 2022),
             'main_building_material': fake.random_element(['Metal', 'Plastic PBT', 'Plastic POM', 'Plastic ABS', 'Wood', 'Glass Fiber', 'Steel', 'Aluminum', 'Glass', 'Fiber'])
         })
 
@@ -57,7 +59,7 @@ def generate_first_period():
             'product_id': product['id'],
             'status': status,
             'employee_id': employee['id'],
-            'company_cost': round(random.uniform(50, 5000), 2),
+            'company_cost': round(random.uniform(50, 500), 2),
             'description': fake.sentence(),
             'processing_started': processing_start.strftime('%Y-%m-%d %H:%M:%S'),
             'processing_finished': processing_finished.strftime('%Y-%m-%d %H:%M:%S') if processing_finished else ''
@@ -85,32 +87,48 @@ def generate_first_period():
             'resolve_date': resolve_date.strftime('%Y-%m-%d %H:%M:%S'),
             'complaint': fake.sentence()
         })
-    save_to_csv(employees, 'employees.csv', ['id', 'name', 'birth_year', 'employment_start'])
-    save_to_csv(products, 'products.csv', ['id', 'name', 'issue_year', 'main_building_material'])
-    save_to_csv(returns, 'returns.csv', ['id', 'product_id', 'status', 'employee_id', 'company_cost', 'description', 'processing_started', 'processing_finished'])
-    save_to_csv(return_processing, 'return_processing.csv', ['employee_id', 'return_id'])
-    save_to_csv(complaints, 'complaints.csv', ['id', 'return_id', 'issue_date', 'resolve_date', 'complaint'])
+    period = 't1'
+    save_to_csv(employees, f'{output}/Employee_{period}.csv', ['id', 'name', 'birth_year', 'employment_start'])
+    save_to_csv(products, f'{output}/Products_{period}.csv', ['id', 'name', 'issue_year', 'main_building_material'])
+    save_to_csv(returns, f'{output}/Returns_{period}.csv', ['id', 'product_id', 'status', 'employee_id', 'company_cost', 'description', 'processing_started', 'processing_finished'])
+    save_to_csv(return_processing, f'{output}/ReturnProcessing_{period}.csv', ['employee_id', 'return_id'])
+    save_to_csv(complaints, f'{output}/Complaints_{period}.csv', ['id', 'return_id', 'issue_date', 'resolve_date', 'complaint'])
 
-    indent_csv('products.csv')
-    indent_csv('returns.csv')
-    indent_csv('return_processing.csv')
-    indent_csv('complaints.csv')
 
 def generate_second_period():
     # generate Products
-    products = []
+    products_new = []
     for _ in range(num_products_b):
-        products.append({
+        products_new.append({
             'id': str(uuid.uuid4()),
             'name': fake.ecommerce_name().capitalize(),
-            'issue_year': fake.year(),
-            'main_building_material': fake.random_element(['Metal', 'Plastic PBT', 'Plastic POM', 'Plastic ABS', 'Wood', 'Glass Fiber', 'Steel', 'Aluminum', 'Glass', 'Fiber'])
+            'issue_year': random.randint(2023, 2024),
+            'main_building_material': fake.random_element(['Metal', 'Plastic ABS', 'Wood', 'Glass Fiber', 'Steel'   , 'Fiber'])
         })
 
     # generate Returns
     returns = []
+    for _ in range(num_returns//3):
+        for product in products:
+            if product['main_building_material'] == 'Plastic ABS' and (product['issue_year'] == 2021 or product['issue_year'] == 2022 or product['issue_year'] == 2023 or product['issue_year'] == 2024):
+                employee = random.choice(employees)
+                status = fake.random_element(['Pending', 'In Progress', 'Completed', 'Canceled'])
+                processing_start = random_date(2023, 2024)
+                processing_finished = processing_start + timedelta(days=random.randint(1, 30)) if status == 'Completed' else None
+                returns.append({
+                    'id': str(uuid.uuid4()),
+                    'product_id': product['id'],
+                    'status': status,
+                    'employee_id': employee['id'],
+                    'company_cost': round(random.uniform(50, 5000), 2),
+                    'description': fake.sentence(),
+                    'processing_started': processing_start.strftime('%Y-%m-%d %H:%M:%S'),
+                    'processing_finished': processing_finished.strftime('%Y-%m-%d %H:%M:%S') if processing_finished else ''
+                })
+    print(len(returns))
+
     for _ in range(num_returns_b):
-        product = random.choice(products)
+        product = random.choice(products_new)
         employee = random.choice(employees)
         status = fake.random_element(['Pending', 'In Progress', 'Completed', 'Canceled'])
         processing_start = random_date(2023, 2024)
@@ -120,7 +138,7 @@ def generate_second_period():
             'product_id': product['id'],
             'status': status,
             'employee_id': employee['id'],
-            'company_cost': round(random.uniform(50, 5000), 2),
+            'company_cost': round(random.uniform(150, 500), 2),
             'description': fake.sentence(),
             'processing_started': processing_start.strftime('%Y-%m-%d %H:%M:%S'),
             'processing_finished': processing_finished.strftime('%Y-%m-%d %H:%M:%S') if processing_finished else ''
@@ -149,10 +167,14 @@ def generate_second_period():
             'complaint': fake.sentence()
         })
 
-    save_to_csv(products, 'products.csv', ['id', 'name', 'issue_year', 'main_building_material'], 'a')
-    save_to_csv(returns, 'returns.csv', ['id', 'product_id', 'status', 'employee_id', 'company_cost', 'description', 'processing_started', 'processing_finished'], 'a')
-    save_to_csv(return_processing, 'return_processing.csv', ['employee_id', 'return_id'], 'a')
-    save_to_csv(complaints, 'complaints.csv', ['id', 'return_id', 'issue_date', 'resolve_date', 'complaint'], 'a')
+    employee = []
+
+    period = 't2'
+    save_to_csv(employees, f'{output}/Employee_{period}.csv', ['id', 'name', 'birth_year', 'employment_start'])
+    save_to_csv(products, f'{output}/Products_{period}.csv', ['id', 'name', 'issue_year', 'main_building_material'])
+    save_to_csv(returns, f'{output}/Returns_{period}.csv', ['id', 'product_id', 'status', 'employee_id', 'company_cost', 'description', 'processing_started', 'processing_finished'])
+    save_to_csv(return_processing, f'{output}/ReturnProcessing_{period}.csv', ['employee_id', 'return_id'])
+    save_to_csv(complaints, f'{output}/Complaints_{period}.csv', ['id', 'return_id', 'issue_date', 'resolve_date', 'complaint'])
 
 def save_to_csv(data, filename, fieldnames, mode='w'):
     with open(filename, mode=mode, newline='', encoding='utf-8') as file:
